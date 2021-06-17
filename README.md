@@ -14,4 +14,4 @@ npm start
 
 ### Use & Test Webapp 
 
-![Live Object Detector](https://liveobjectdetector.netlify.app/)
+[Live Object Detector](https://liveobjectdetector.netlify.app/)
