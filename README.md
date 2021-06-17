@@ -6,8 +6,8 @@ you have [Node.js](http://nodejs.org/) installed. This runs the app in
 development mode:
 
 ```sh
-git clone https://github.com/Rishit-dagli/Greenathon-Plant-AI # or clone your own fork
-cd Greenathon-Plant-AI
+git clone https://github.com/mansijain014/live-object-detection-app.git # or clone your own fork
+cd live-object-detection-app
 npm install
 npm start
 ```
