@@ -1,12 +1,10 @@
 // Import dependencies
 import React, { useRef, useEffect } from "react";
-// import * as tf from "@tensorflow/tfjs";
-// Import required model 
+import * as tf from "@tensorflow/tfjs";
 import * as cocossd from "@tensorflow-models/coco-ssd";
 import Webcam from "react-webcam";
 import "./App.css";
-// Import drawing utility 
-import {drawReact} from "./utilities.js"
+import { drawRect } from "./utilities";
 
 function App() {
   const webcamRef = useRef(null);
@@ -14,9 +12,9 @@ function App() {
 
   // Main function
   const runCoco = async () => {
-    // Load network 
     const net = await cocossd.load();
-    //  Loop and detect 
+    console.log("Handpose model loaded.");
+    //  Loop and detect hands
     setInterval(() => {
       detect(net);
     }, 10);
@@ -43,13 +41,11 @@ function App() {
       canvasRef.current.height = videoHeight;
 
       // Make Detections
-      const obj = await net.detect(video)
-      console.log(obj);
+      const obj = await net.detect(video);
+
       // Draw mesh
       const ctx = canvasRef.current.getContext("2d");
-
-      // Update drawing utility
-      drawReact(obj, ctx);
+      drawRect(obj, ctx); 
     }
   };
 
@@ -57,6 +53,7 @@ function App() {
 
   return (
     <div className="App">
+      <h3 className="Heading">Live Object Detector</h3>
       <header className="App-header">
         <Webcam
           ref={webcamRef}
@@ -69,8 +66,8 @@ function App() {
             right: 0,
             textAlign: "center",
             zindex: 9,
-            width: 640,
-            height: 480,
+            width: "fit-content",
+            height: "auto",
           }}
         />
 
@@ -84,8 +81,8 @@ function App() {
             right: 0,
             textAlign: "center",
             zindex: 8,
-            width: 640,
-            height: 480,
+            width: "fit-content",
+            height: "auto",
           }}
         />
       </header>
