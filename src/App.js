@@ -1,5 +1,4 @@
-// Import dependencies
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import * as tf from "@tensorflow/tfjs";
 import * as cocossd from "@tensorflow-models/coco-ssd";
 import Webcam from "react-webcam";
@@ -9,47 +8,53 @@ import { drawRect } from "./utilities";
 function App() {
   const webcamRef = useRef(null);
   const canvasRef = useRef(null);
+  const videoRef = useRef(null);
+  const [isVideoPaused, setIsVideoPaused] = useState(false);
+  const [popupVisible, setPopupVisible] = useState(false);
+  const [isVideoLoaded, setIsVideoLoaded] = useState(false);
 
   // Main function
   const runCoco = async () => {
+    // Explicitly set the backend to WebGL
+    await tf.setBackend("webgl");
+
     const net = await cocossd.load();
-    console.log("Handpose model loaded.");
-    //  Loop and detect hands
+    console.log("COCO-SSD model loaded.");
+
+    // Loop and detect objects
     setInterval(() => {
       detect(net);
     }, 10);
   };
 
   const detect = async (net) => {
-    // Check data is available
-    if (
-      typeof webcamRef.current !== "undefined" &&
-      webcamRef.current !== null &&
-      webcamRef.current.video.readyState === 4
-    ) {
-      // Get Video Properties
-      const video = webcamRef.current.video;
-      const videoWidth = webcamRef.current.video.videoWidth;
-      const videoHeight = webcamRef.current.video.videoHeight;
+    // Make Detections
+    if (isVideoLoaded) {
+      const obj = await net.detect(webcamRef.current.video);
+      console.log(obj);
+      console.log("surya");
 
-      // Set video width
-      webcamRef.current.video.width = videoWidth;
-      webcamRef.current.video.height = videoHeight;
-
-      // Set canvas height and width
-      canvasRef.current.width = videoWidth;
-      canvasRef.current.height = videoHeight;
-
-      // Make Detections
-      const obj = await net.detect(video);
-
-      // Draw mesh
-      const ctx = canvasRef.current.getContext("2d");
-      drawRect(obj, ctx); 
+      // Check for object detection and pause the video
+      if (obj.some((item) => item.class === "cell phone")) {
+        setIsVideoPaused(true);
+        setPopupVisible(true);
+        videoRef.current.pause();
+      } else {
+        setIsVideoPaused(false);
+        setPopupVisible(false);
+        videoRef.current.play();
+      }
     }
   };
 
-  useEffect(()=>{runCoco()},[]);
+  // Handle the loadeddata event on the video element
+  const handleVideoLoad = () => {
+    setIsVideoLoaded(true);
+  };
+
+  useEffect(() => {
+    runCoco();
+  }, []);
 
   return (
     <div className="App">
@@ -57,19 +62,30 @@ function App() {
       <header className="App-header">
         <Webcam
           ref={webcamRef}
-          muted={true} 
+          muted={true}
           style={{
-            position: "absolute",
-            marginLeft: "auto",
-            marginRight: "auto",
-            left: 0,
-            right: 0,
-            textAlign: "center",
-            zindex: 9,
-            width: "fit-content",
-            height: "auto",
+            display: "none", // Hide the webcam container
           }}
         />
+
+        <video
+          ref={videoRef}
+          width="640"
+          height="360"
+          controls
+          autoPlay
+          muted
+          onLoadedData={handleVideoLoad} // Wait for loadeddata event
+          style={{
+            display: isVideoPaused ? "none" : "block",
+          }}
+        >
+          <source
+            src="https://file-examples.com/storage/fe7fa6fa10650d95e925ca2/2017/04/file_example_MP4_640_3MG.mp4"
+            type="video/mp4"
+          />
+          Your browser does not support the video tag.
+        </video>
 
         <canvas
           ref={canvasRef}
@@ -80,11 +96,30 @@ function App() {
             left: 0,
             right: 0,
             textAlign: "center",
-            zindex: 8,
+            zIndex: 8,
             width: "fit-content",
             height: "auto",
           }}
         />
+
+        {popupVisible && (
+          <div
+            id="popup"
+            style={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              backgroundColor: "rgba(0, 0, 0, 0.8)",
+              color: "white",
+              padding: "20px",
+              borderRadius: "10px",
+              zIndex: 10,
+            }}
+          >
+            <p>Video paused due to cell phone detected</p>
+          </div>
+        )}
       </header>
     </div>
   );
