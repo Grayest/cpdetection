@@ -11,7 +11,6 @@ function App() {
   const videoRef = useRef(null);
   const [isVideoPaused, setIsVideoPaused] = useState(false);
   const [popupVisible, setPopupVisible] = useState(false);
-  const [isVideoLoaded, setIsVideoLoaded] = useState(false);
 
   // Main function
   const runCoco = async () => {
@@ -21,35 +20,32 @@ function App() {
     const net = await cocossd.load();
     console.log("COCO-SSD model loaded.");
 
+    // Wait for the video to load its metadata
+    videoRef.current.addEventListener("loadedmetadata", () => {
+      setIsVideoPaused(false); // Ensure video playback starts
+    });
+
     // Loop and detect objects
-    setInterval(() => {
-      detect(net);
-    }, 10);
-  };
+    const detectObjects = async () => {
+      if (webcamRef.current && videoRef.current) {
+        const obj = await net.detect(webcamRef.current.video);
+        console.log("Detected Objects:", obj);
 
-  const detect = async (net) => {
-    // Make Detections
-    if (isVideoLoaded) {
-      const obj = await net.detect(webcamRef.current.video);
-      console.log(obj);
-      console.log("surya");
-
-      // Check for object detection and pause the video
-      if (obj.some((item) => item.class === "cell phone")) {
-        setIsVideoPaused(true);
-        setPopupVisible(true);
-        videoRef.current.pause();
-      } else {
-        setIsVideoPaused(false);
-        setPopupVisible(false);
-        videoRef.current.play();
+        // Check for object detection and pause the video
+        if (obj.some((item) => item.class === "cell phone")) {
+          setIsVideoPaused(true);
+          setPopupVisible(true);
+          videoRef.current.pause();
+        } else {
+          setIsVideoPaused(false);
+          setPopupVisible(false);
+          videoRef.current.play();
+        }
       }
-    }
-  };
+      requestAnimationFrame(detectObjects);
+    };
 
-  // Handle the loadeddata event on the video element
-  const handleVideoLoad = () => {
-    setIsVideoLoaded(true);
+    detectObjects();
   };
 
   useEffect(() => {
@@ -64,7 +60,7 @@ function App() {
           ref={webcamRef}
           muted={true}
           style={{
-            display: "none", // Hide the webcam container
+           // display: "none", // Hide the webcam container
           }}
         />
 
@@ -75,7 +71,6 @@ function App() {
           controls
           autoPlay
           muted
-          onLoadedData={handleVideoLoad} // Wait for loadeddata event
           style={{
             display: isVideoPaused ? "none" : "block",
           }}
